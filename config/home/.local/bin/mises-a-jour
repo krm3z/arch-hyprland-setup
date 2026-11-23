@@ -1,0 +1,21 @@
+#!/bin/bash
+# mises-a-jour [compter|lancer|demarrage]  — module de la barre + lancement de la mise à jour
+case "${1:-compter}" in
+  compter)
+    n=$( (checkupdates 2>/dev/null; yay -Qua 2>/dev/null) | wc -l)
+    if [ "$n" -gt 0 ]; then printf '{"text":"󰚰 %s","tooltip":"%s mise(s) à jour disponible(s) — cliquer pour installer","class":"dispo"}\n' "$n" "$n"
+    else printf '{"text":"","tooltip":"Système à jour","class":"ajour"}\n'; fi ;;
+  lancer)
+    ghostty --class=fr.kerem.flottant --title="Mises à jour" -e bash -c 'echo "== Mise à jour du système (pacman + AUR) =="; yay -Syu; echo; read -n1 -rsp "Terminé. Appuyez sur une touche pour fermer…"'
+    pkill -RTMIN+8 waybar ;;
+  demarrage)
+    # Au démarrage de la session : une seule fois par jour, ouvre la mise à jour (sudo demande le mot de passe)
+    stamp="${XDG_CACHE_HOME:-$HOME/.cache}/maj-derniere"
+    [ "$(cat "$stamp" 2>/dev/null)" = "$(date +%F)" ] && exit 0
+    for _ in $(seq 1 30); do ping -c1 -W2 archlinux.org >/dev/null 2>&1 && break; sleep 4; done
+    ping -c1 -W2 archlinux.org >/dev/null 2>&1 || exit 0   # pas de réseau : on réessaiera au prochain démarrage
+    date +%F > "$stamp"
+    n=$( (checkupdates 2>/dev/null; yay -Qua 2>/dev/null) | wc -l)
+    [ "$n" -gt 0 ] && exec "$0" lancer
+    pkill -RTMIN+8 waybar ;;
+esac

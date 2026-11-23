@@ -1,0 +1,366 @@
+#!/usr/bin/env python3
+"""raccourcis-generer — (re)crée ~/Bureau/Raccourcis.md à partir de la config Hyprland.
+
+Les raccourcis sont lus dans la config chargée par Hyprland (`hyprctl binds -j`),
+donc la fiche correspond exactement à ce qui marche. Chaque raccourci de
+~/.config/hypr/hyprland.lua porte une description « Catégorie | Action ».
+Un raccourci ajouté sans description apparaît quand même (catégorie « Autres »),
+avec le commentaire ou la commande trouvés dans le fichier.
+Les raccourcis du terminal viennent de `ghostty +list-keybinds`.
+
+Usage : raccourcis-generer [--silencieux]
+"""
+import datetime
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+SORTIE = HOME / "Bureau" / "Raccourcis.md"
+CONFIG = HOME / ".config/hypr/hyprland.lua"
+SILENCE = "--silencieux" in sys.argv
+
+ORDRE = ["Aide", "Thèmes", "Applications", "Terminal (Ghostty)", "Fenêtres", "Placement des fenêtres",
+         "Bureaux virtuels", "Souris", "Pavé tactile", "Captures d'écran", "Presse-papiers", "Notifications",
+         "Volume et luminosité", "Verrouillage et alimentation", "Système", "Autres"]
+INTRO = {
+    "Aide": "La fiche que tu lis en ce moment.",
+    "Thèmes": "Change d'un coup le fond d'écran, les couleurs, les polices, la barre et les animations.",
+    "Applications": "Ouvrir les programmes, comme sous Windows.",
+    "Terminal (Ghostty)": "À utiliser à l'intérieur d'une fenêtre de terminal.",
+    "Fenêtres": "Fermer, basculer et organiser les fenêtres.",
+    "Placement des fenêtres": "Agrandir, réduire, ancrer à gauche ou à droite (comme Windows + flèches).",
+    "Bureaux virtuels": "Les bureaux 1 à 5 sont affichés dans la barre en haut à gauche. "
+                        "Les chiffres sont ceux de la rangée du haut du clavier AZERTY (sans Maj).",
+    "Captures d'écran": "Les captures sont enregistrées dans ~/Pictures/Captures et copiées dans le presse-papiers.",
+    "Presse-papiers": "Copier-coller, et retrouver ce que tu as copié avant.",
+    "Volume et luminosité": "Touches spéciales du clavier (rangée F1…F12, souvent avec la touche Fn).",
+}
+MODS = [(64, "Windows"), (4, "Ctrl"), (8, "Alt"), (1, "Maj")]
+TOUCHES = {
+    "RETURN": "Entrée", "SPACE": "Espace", "TAB": "Tab", "ESCAPE": "Échap", "DELETE": "Suppr",
+    "PRINT": "Impr. écran", "LEFT": "←", "RIGHT": "→", "UP": "↑", "DOWN": "↓", "SEMICOLON": ";",
+    "MOUSE:272": "clic gauche", "MOUSE:273": "clic droit", "MOUSE_DOWN": "molette ↓", "MOUSE_UP": "molette ↑",
+    "CAPS_LOCK": "Verr. Maj", "SUPER_L": "Windows",
+    "XF86AUDIORAISEVOLUME": "Volume +", "XF86AUDIOLOWERVOLUME": "Volume −", "XF86AUDIOMUTE": "Muet",
+    "XF86AUDIOMICMUTE": "Micro muet", "XF86MONBRIGHTNESSUP": "Luminosité +",
+    "XF86MONBRIGHTNESSDOWN": "Luminosité −", "XF86AUDIONEXT": "Piste suivante",
+    "XF86AUDIOPREV": "Piste précédente", "XF86AUDIOPLAY": "Lecture", "XF86AUDIOPAUSE": "Pause",
+}
+AZERTY = {10: "& (1)", 11: "é (2)", 12: '" (3)', 13: "' (4)", 14: "( (5)", 15: "- (6)",
+          16: "è (7)", 17: "_ (8)", 18: "ç (9)", 19: "à (0)"}
+
+
+def kbd(t):
+    return f"`{t}`"
+
+
+def combo_hypr(b):
+    mods = [n for m, n in MODS if b.get("modmask", 0) & m]
+    key = b.get("key") or ""
+    if not key and b.get("keycode"):
+        touche = AZERTY.get(b["keycode"], f"code {b['keycode']}")
+    else:
+        touche = TOUCHES.get(key.upper(), key if len(key) > 1 else key.upper())
+    if key.upper() == "SUPER_L" and mods == ["Windows"]:
+        return kbd("Windows") + " (appuyer puis relâcher, seule)"
+    if b.get("mouse") or key.lower().startswith("mouse"):
+        return " + ".join(kbd(m) for m in mods) + " + " + touche
+    return " + ".join(kbd(x) for x in mods + [touche])
+
+
+def lire_lua():
+    """Commentaires / commandes de la config, pour les raccourcis sans description."""
+    infos = {}
+    try:
+        texte = CONFIG.read_text()
+    except OSError:
+        return infos, []
+    for ligne in texte.splitlines():
+        m = re.search(r'hl\.bind\(\s*(?:SUPER\s*\.\.\s*)?"([^"]+)"', ligne)
+        if not m:
+            continue
+        brut = m.group(1)
+        cle = ("SUPER" if "SUPER .." in ligne.split("hl.bind(", 1)[1][:12] else "") + brut
+        cle = re.sub(r"\s+", "", cle.upper()).lstrip("+")
+        com = re.search(r"--\s*(.+)$", ligne)
+        cmd = re.search(r'exec_cmd\("([^"]+)"\)', ligne)
+        infos[cle] = (com.group(1).strip() if com else "") or (f"Lance : {cmd.group(1)}" if cmd else "")
+    gestes = re.findall(r'hl\.gesture\(\{\s*fingers\s*=\s*(\d+),\s*direction\s*=\s*"(\w+)",\s*action\s*=\s*"(\w+)"', texte)
+    return infos, gestes
+
+
+def cle_normalisee(b):
+    mods = [{64: "SUPER", 4: "CTRL", 8: "ALT", 1: "SHIFT"}[m] for m, _ in MODS if b.get("modmask", 0) & m]
+    key = b.get("key") or (f"code:{b['keycode']}" if b.get("keycode") else "")
+    return "+".join(mods + [key.upper()])
+
+
+def binds_hyprland():
+    r = subprocess.run(["hyprctl", "binds", "-j"], capture_output=True, text=True, timeout=10)
+    return json.loads(r.stdout)
+
+
+def entrees_hyprland(binds):
+    infos, gestes = lire_lua()
+    groupes = {}  # (cat, action) -> [combos]
+    for b in binds:
+        if b.get("submap"):
+            continue
+        desc = (b.get("description") or "").strip()
+        if "|" in desc:
+            cat, action = (x.strip() for x in desc.split("|", 1))
+        elif desc:
+            cat, action = "Autres", desc
+        else:
+            cat, action = "Autres", infos.get(cle_normalisee(b), "") or "(sans description — ajoute description = \"Catégorie | Action\")"
+        groupes.setdefault((cat, action), [])
+        c = combo_hypr(b)
+        if c not in groupes[(cat, action)]:
+            groupes[(cat, action)].append(c)
+    for doigts, direction, action in gestes:
+        sens = {"horizontal": "vers la gauche ou la droite", "vertical": "vers le haut ou le bas"}.get(direction, direction)
+        quoi = {"workspace": "changer de bureau", "special": "afficher les fenêtres réduites",
+                "close": "fermer la fenêtre", "fullscreen": "plein écran"}.get(action, action)
+        groupes[("Pavé tactile", quoi.capitalize())] = \
+            [f"Glisser {doigts} doigts {sens}"]
+    return groupes
+
+
+GHOSTTY_ACTIONS = {
+    "copy_to_clipboard": "Copier le texte sélectionné", "paste_from_clipboard": "Coller",
+    "new_tab": "Nouvel onglet", "close_tab": "Fermer l'onglet", "next_tab": "Onglet suivant",
+    "previous_tab": "Onglet précédent", "new_window": "Nouvelle fenêtre de terminal",
+    "new_split:right": "Partager : nouveau panneau à droite", "new_split:down": "Partager : nouveau panneau en dessous",
+    "goto_split:left": "Aller au panneau de gauche", "goto_split:right": "Aller au panneau de droite",
+    "goto_split:up": "Aller au panneau du haut", "goto_split:down": "Aller au panneau du bas",
+    "increase_font_size": "Agrandir le texte", "decrease_font_size": "Réduire le texte",
+    "reset_font_size": "Taille du texte normale", "start_search": "Rechercher dans le terminal",
+    "select_all": "Tout sélectionner", "scroll_page_up": "Remonter d'une page", "scroll_page_down": "Descendre d'une page",
+    "scroll_to_top": "Aller tout en haut", "scroll_to_bottom": "Aller tout en bas",
+    "jump_to_prompt:-1": "Revenir à la commande précédente", "jump_to_prompt:1": "Aller à la commande suivante",
+    "clear_screen": "Effacer l'écran", "reload_config": "Recharger la configuration de Ghostty", "quit": "Quitter Ghostty",
+}
+GT = {"ctrl": "Ctrl", "shift": "Maj", "alt": "Alt", "super": "Windows", "arrow_left": "←", "arrow_right": "→",
+      "arrow_up": "↑", "arrow_down": "↓", "page_up": "Page préc.", "page_down": "Page suiv.", "home": "Début",
+      "end": "Fin", "tab": "Tab", "escape": "Échap", "insert": "Inser", "enter": "Entrée", "space": "Espace",
+      "backspace": "Retour arrière", "comma": ","}
+
+
+def entrees_ghostty():
+    try:
+        r = subprocess.run(["ghostty", "+list-keybinds"], capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    groupes, onglets = {}, False
+    for ligne in r.stdout.splitlines():
+        m = re.match(r"keybind\s*=\s*(.+)", ligne.strip())
+        if not m:
+            continue
+        val = m.group(1)
+        # séparer touches et action sur le dernier « = » qui précède un nom d'action
+        mm = re.match(r"(.+?)=([a-z_]+(?::.*)?)$", val)
+        if not mm:
+            continue
+        touches, action = mm.group(1), mm.group(2)
+        prefixe = ""
+        for p in ("performable:", "unconsumed:", "global:", "all:"):
+            if touches.startswith(p):
+                touches = touches[len(p):]
+                prefixe = p
+        if action.startswith("goto_tab:"):
+            onglets = True
+            continue
+        base = action.split(":")[0]
+        nom = GHOSTTY_ACTIONS.get(action) or GHOSTTY_ACTIONS.get(base)
+        if not nom or touches in ("copy", "paste") or "insert" in touches:
+            continue
+        parts = re.split(r"\+(?=.)", touches)
+        aff = " + ".join(kbd(GT.get(x, x.upper() if len(x) == 1 else x)) for x in parts if x)
+        if (prefixe == "performable:" or touches == "ctrl+c") and base == "copy_to_clipboard":
+            nom = "Copier le texte sélectionné (sinon : interrompre la commande)"
+        groupes.setdefault(("Terminal (Ghostty)", nom), [])
+        if aff not in groupes[("Terminal (Ghostty)", nom)]:
+            groupes[("Terminal (Ghostty)", nom)].append(aff)
+    if onglets:
+        groupes[("Terminal (Ghostty)", "Aller à l'onglet 1 à 9")] = [kbd("Alt") + " + " + kbd("1") + " … " + kbd("9")]
+    return groupes
+
+
+STATIQUES = {
+    "Presse-papiers": [
+        ("Copier (dans les applications)", [kbd("Ctrl") + " + " + kbd("C")]),
+        ("Couper (dans les applications)", [kbd("Ctrl") + " + " + kbd("X")]),
+        ("Coller (dans les applications)", [kbd("Ctrl") + " + " + kbd("V")]),
+        ("Copier / coller dans le terminal", [kbd("Ctrl") + " + " + kbd("Maj") + " + " + kbd("C") + " / " + kbd("V")]),
+    ],
+}
+
+
+def tableau(lignes):
+    out = ["| Raccourci | Action |", "|---|---|"]
+    for action, combos in lignes:
+        out.append(f"| {' ou '.join(combos)} | {action} |")
+    return out
+
+
+def main():
+    try:
+        binds = binds_hyprland()
+    except Exception as e:  # Hyprland ne tourne pas
+        if not SILENCE:
+            print(f"Impossible de lire les raccourcis (Hyprland est-il lancé ?) : {e}", file=sys.stderr)
+        return 1
+    groupes = entrees_hyprland(binds)
+    groupes.update(entrees_ghostty())
+    par_cat = {}
+    for (cat, action), combos in groupes.items():
+        par_cat.setdefault(cat, []).append((action, combos))
+    for cat, lignes in STATIQUES.items():
+        par_cat.setdefault(cat, []).extend(lignes)
+    cats = [c for c in ORDRE if c in par_cat] + sorted(c for c in par_cat if c not in ORDRE)
+
+    maintenant = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
+    md = ["# Raccourcis clavier", "",
+          f"> Fiche créée automatiquement le {maintenant} à partir de la configuration Hyprland "
+          "(`~/.config/hypr/hyprland.lua`) et de Ghostty.",
+          "> La touche **Windows** est la touche avec le logo (appelée « Super » sous Linux).",
+          "> Ouvrir cette fiche : `Windows` + `F2`, ou l'icône **Raccourcis** du bureau.",
+          "> Elle se met à jour toute seule quand la config change ; à la main : `raccourcis-generer`.", ""]
+    md.append("## Sommaire")
+    md.append("")
+    md.append(" · ".join(cats + ["Barre du haut", "Icônes du bureau", "Toutes les applications",
+                                   "Applications installées", "Applis web", "Boutique d'applis",
+                                   "Wi-Fi Ynov"]))
+    md.append("")
+    for cat in cats:
+        md.append(f"## {cat}")
+        md.append("")
+        if cat in INTRO:
+            md.append(f"> {INTRO[cat]}")
+            md.append("")
+        lignes = par_cat[cat]
+        if cat == "Bureaux virtuels":
+            lignes.sort(key=lambda x: (0 if "bureau " not in x[0] or not x[0][-1].isdigit() else 1,
+                                       "Envoyer" in x[0],
+                                       int(re.findall(r"\d+$", x[0])[0]) if re.findall(r"\d+$", x[0]) else 0))
+        md += tableau(lignes)
+        md.append("")
+    md += ["## Barre du haut", "", "> Clique sur les pastilles de la barre :", "",
+           "| Élément | Clic gauche | Autre |", "|---|---|---|",
+           "| Pastille Claude (à gauche) | Ouvre claude.ai/settings/usage | Survol : détail de la consommation · clic droit : actualiser |",
+           "| Bureaux 1 à 5 | Aller au bureau | Molette : bureau suivant / précédent |",
+           "| Heure et date (au centre) | Affiche la date complète | Survol : calendrier · molette : changer de mois |",
+           "| Processeur / mémoire | Gestionnaire des tâches | |",
+           "| Volume | Mixeur audio | Clic droit : couper le son · molette : régler |",
+           "| Wi-Fi | Choisir un réseau | Clic droit : paramètres réseau avancés |",
+           "| Bluetooth | Appareils Bluetooth | Clic droit : activer / désactiver |",
+           "| Luminosité | | Molette : régler |",
+           "| Cloche | Historique des notifications | Clic droit : ne pas déranger · clic milieu : tout fermer |",
+           "| Bouton ⏻ | Menu : verrouiller, veille, redémarrer (aussi sous Windows), éteindre | |", "",
+           "## Icônes du bureau", "",
+           "> Visibles quand aucune fenêtre ne les cache (`Windows` + `D` pour afficher le bureau).", "",
+           "| Icône | Ouvre |", "|---|---|",
+           "| Claude | Claude Desktop (l'application officielle d'Anthropic) |",
+           "| VS Code | Visual Studio Code |",
+           "| Chrome | Le navigateur |", "| Terminal | Un terminal Ghostty |",
+           "| Raccourcis | Cette fiche |",
+           "| Applications | La grille de toutes les applications (aussi `Windows` + `A`) |", ""]
+    md += ["## Toutes les applications", "",
+           "> `Windows` + `A` ou l'icône **Applications** du bureau : grille de toutes les applications "
+           "installées, comme le menu Démarrer. Aux couleurs du thème actif.", "",
+           "| Geste | Effet |", "|---|---|",
+           "| Taper au clavier | Rechercher une application par son nom |",
+           "| `Entrée` | Ouvrir la première application trouvée |",
+           "| Clic sur une catégorie | Filtrer (Bureautique, Internet et réseau, Programmation…) |",
+           "| Boutons du bas | Verrouiller, veille, redémarrer, éteindre |",
+           "| `Échap`, `Windows` + `A` ou ✕ | Fermer la grille |", "",
+           "> Les outils techniques (Rofi, kitty, btop, Dolphin, Ark, Bluetooth, volume, imprimantes, "
+           "LibreOffice Base/Draw/Math…) sont **masqués** de la grille mais toujours installés : "
+           "ils restent accessibles depuis la barre, `Windows` + `I` ou « Ouvrir avec ». "
+           "Pour en réafficher un : `rm ~/.local/share/applications/nom.desktop` "
+           "(liste : `grep -l X-Grille-Masquee ~/.local/share/applications/*.desktop`).", ""]
+    md += ["## Applications installées", "",
+           "> Toutes sont dans la grille (`Windows` + `A`). Nom à taper dans la recherche → application.", "",
+           "| Dans la grille | Application | Commande |", "|---|---|---|",
+           "| Claude | Claude Desktop (connexion gardée dans le trousseau) | `claude-desktop` |",
+           "| Visual Studio Code | Éditeur de code | `code` |",
+           "| GitHub Desktop | Client GitHub (version communautaire pour Linux) | `github-desktop` |",
+           "| Teams for Linux | Microsoft Teams (client non officiel) | `teams-for-linux` |",
+           "| Discord | Discord | `discord` |",
+           "| LibreOffice Writer, Calc, Impress… | Bureautique en français + correcteur | `libreoffice` |",
+           "| Google Chrome | Navigateur (Netflix / Widevine) | `google-chrome-stable` |",
+           "| Chrome | Navigateur principal | `google-chrome-stable` |",
+           "| DBeaver | Bases de données (PostgreSQL : base « kerem » en local) | `dbeaver` |",
+           "| JupyterLab / Jupyter Notebook | Carnets Python (pandas installé) | `jupyter lab` |",
+           "| Lecteur multimédia (mpv) | Vidéos et musique | `mpv fichier` |",
+           "| Visionneur d'images (Loupe) | Photos | `loupe` |",
+           "| Papers | Documents PDF | `papers` |",
+           "| Fichiers | Explorateur de fichiers Thunar (aussi `Windows` + `E`) | `thunar` |",
+           "| Paramètres | Wi-Fi, son, Bluetooth… (aussi `Windows` + `I`) | `parametres` |",
+           "| Timeshift | Sauvegardes du système (chaque jour) | `timeshift-launcher` (demande le mot de passe) |",
+           "| Logiciels | Boutique d'applis Flatpak (voir « Boutique d'applis ») | `gnome-software` |", ""]
+    md += ["## Applis web", "",
+           "> De vraies fenêtres sans barre de navigateur (Google Chrome en mode application), chacune "
+           "avec son propre profil : la connexion est gardée séparément pour chaque appli. "
+           "Toutes sont dans la grille (`Windows` + `A`).", "",
+           "| Appli | Site | Raccourci |", "|---|---|---|",
+           "| Claude Web | claude.ai (secours de Claude Desktop) | |",
+           "| Netflix | www.netflix.com | |",
+           "| Deezer | www.deezer.com | |",
+           "| Gmail | mail.google.com | |",
+           "| Outlook | outlook.office.com | |",
+           "| Mail iCloud | www.icloud.com/mail | |",
+           "| LinkedIn | www.linkedin.com | |",
+           "| Power BI | app.powerbi.com | |",
+           "| Microsoft 365 | www.office.com | |",
+           "| Extranet Ynov | extranet.ynov.com | `Windows` + `Y` |", ""]
+    md += ["## Boutique d'applis", "",
+           "> **Logiciels** (dans la grille `Windows` + `A`) : la boutique d'applis, comme le Microsoft Store. "
+           "Elle installe des applis **Flatpak** depuis Flathub, isolées du reste du système. "
+           "Les mises à jour d'Arch ne passent pas par elle : elles restent avec `yay` "
+           "(pastille de mises à jour de la barre).", "",
+           "| Je veux… | Dans Logiciels | Dans un terminal |", "|---|---|---|",
+           "| Installer une appli | Rechercher (loupe en haut) → l'appli → **Installer** | `flatpak install flathub nom` |",
+           "| Trouver le nom exact d'une appli | | `flatpak search mot` (colonne « ID ») |",
+           "| Mettre à jour mes applis | Onglet **Mises à jour** → **Tout mettre à jour** | `flatpak update` |",
+           "| Voir mes applis installées | Onglet **Installées** | `flatpak list --app` |",
+           "| Désinstaller une appli | Onglet **Installées** → **Désinstaller** | `flatpak uninstall nom` |",
+           "| Libérer la place (bibliothèques inutiles) | | `flatpak uninstall --unused` |",
+           "| Mettre à jour Arch (pas la boutique) | | `yay` |", "",
+           "> Une appli installée apparaît dans la grille (`Windows` + `A`) et dans le menu "
+           "(`Windows`). Si elle n'y est pas tout de suite, rouvre la grille.", ""]
+    md += ["## Wi-Fi Ynov", "",
+           "> Réseau **WiFi@YNOV** (WPA2 Entreprise). Le mot de passe n'est écrit dans aucun fichier : "
+           "il est gardé dans le trousseau, ouvert avec ta session. Connexion automatique en arrivant "
+           "à Ynov, prioritaire sur le partage iPhone.", "",
+           "| Je veux… | Commande (dans un terminal) |", "|---|---|",
+           "| Me reconnecter | `nmcli connection up \"WiFi@YNOV\"` (ou icône Wi-Fi de la barre → WiFi@YNOV) |",
+           "| Retaper mon mot de passe (changé, ou oublié par le trousseau) | `nmcli connection up \"WiFi@YNOV\" --ask` |",
+           "| Changer d'identifiant Ynov | `nmcli connection modify \"WiFi@YNOV\" 802-1x.identity \"mon.identifiant\"` |",
+           "| Vérifier qu'Internet marche | `ping -c 3 archlinux.org` |",
+           "| Voir sur quel réseau je suis | `nmcli connection show --active` |",
+           "| Repasser sur l'iPhone | `nmcli connection up iPhone` |", "",
+           "> Sécurité : PEAP + MSCHAPv2, et le certificat du serveur est vérifié (il doit s'appeler "
+           "`radius.auvence.co` et être signé par une autorité reconnue). Si un jour ça ne se connecte plus "
+           "alors que tes camarades y arrivent, Ynov a peut-être changé de serveur : demande le nouveau nom "
+           "au service informatique, puis `nmcli connection modify \"WiFi@YNOV\" 802-1x.domain-suffix-match \"nouveau.nom\"`.", "",
+           "> VDI@YNOV et WiFi@IOT ne sont pas configurés (pas utiles pour ton PC).", ""]
+    SORTIE.parent.mkdir(parents=True, exist_ok=True)
+    nouveau = "\n".join(md)
+    # n'écrit que si le contenu (hors date) a changé
+    ancien = SORTIE.read_text() if SORTIE.exists() else ""
+    sans_date = lambda s: re.sub(r"le \d\d/\d\d/\d{4} à \d\d:\d\d", "", s)
+    if sans_date(ancien) != sans_date(nouveau):
+        SORTIE.write_text(nouveau)
+        if not SILENCE:
+            print(f"Fiche écrite : {SORTIE}")
+    elif not SILENCE:
+        print(f"Fiche déjà à jour : {SORTIE}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

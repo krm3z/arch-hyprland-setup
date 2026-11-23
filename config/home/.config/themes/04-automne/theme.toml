@@ -1,0 +1,72 @@
+# Thème 4 — Automne : rouge érable, blanc brume, accent or (la feuille du logo).
+nom = "Automne"
+image = "automne-ghost-of-yotei.jpg"
+cadrage = [0.5, 0.5]
+phrase = "Le calme avant la tempête."
+
+[couleurs]
+mode = "sombre"
+fond = "#1a100d"
+accent = "#d9472b"              # rouge érable
+accent2 = "#f1eee8"             # blanc brume
+accent3 = "#d8a93a"             # or
+fidelite = 0.6
+
+[polices]
+titre = "Shippori Mincho"       # fine, à empattements, style japonais
+titre_graisse = 500
+titre_espacement = 2
+terminal = "VictorMono Nerd Font"
+terminal_taille = 12
+
+[barre]                         # transparente et très floutée, comme la brume
+fond = "#efece8"
+opacite = 0.22
+flou = true
+
+[bordures]                      # dégradé rouge -> or
+couleurs = ["accent", "accent3"]
+angle = 60
+taille = 2
+
+[fenetres]
+flou_taille = 10
+flou_passes = 4
+
+[animations]
+style = "feuilles"              # les fenêtres glissent comme des feuilles qui tombent
+
+[fond_ecran]
+transition = "fade"
+duree = 2.6
+
+[terminal]
+opacite = 0.45
+
+[horloge]                       # grande horloge blanche, ciel brumeux en haut à gauche
+ancre = "top left"
+x = "6.5%"
+y = "1%"
+taille = 100
+couleur = "#ffffff"
+date_couleur = "#ffffff"
+date_taille = 20
+date_espacement = 2
+sceau = "秋"
+ombre = "forte"
+
+[icones]                        # en colonne, dans la brume
+ancre = "top left"
+x = "43%"
+y = "12%"
+disposition = "colonne"
+taille = 44
+espacement = 8
+fond = "#f4f1ec"
+fond_opacite = 0.55
+glyphe = "accent"
+nom_couleur = "fond"
+
+[verrouillage]
+luminosite = 0.5
+phrase_couleur = "accent3"

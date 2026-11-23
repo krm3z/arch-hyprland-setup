@@ -1,0 +1,17 @@
+# wofi — lanceur d'applications (Super seule, Super+S, Super+Espace)
+# Couleurs : style.css -> ~/.config/themes/actuel/gen/wofi.css
+show=drun
+width=580
+height=440
+location=center
+prompt=Rechercher une application…
+allow_images=true
+image_size=28
+insensitive=true
+matching=fuzzy
+term=ghostty
+hide_scroll=true
+no_actions=true
+gtk_dark=true
+key_expand=Tab
+layer=overlay

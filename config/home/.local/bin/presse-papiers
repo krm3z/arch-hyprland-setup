@@ -1,0 +1,7 @@
+#!/bin/bash
+# Historique du presse-papiers (Super+V) : choisit un élément, le copie et le colle
+[ "$1" = effacer ] && { cliphist wipe && notify-send -i edit-clear "Presse-papiers" "Historique effacé"; exit; }
+choix=$(cliphist list | rofi -dmenu -i -p "Presse-papiers" -display-columns 2 -theme-str 'window{width:640px;}')
+[ -z "$choix" ] && exit 0
+printf '%s' "$choix" | cliphist decode | wl-copy
+sleep 0.15; wtype -M ctrl v -m ctrl

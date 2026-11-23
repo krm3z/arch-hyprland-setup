@@ -1,0 +1,36 @@
+/* Thème rofi « minimal » — couleurs du thème actif (couleurs.rasi -> ~/.config/themes/actuel/gen/rofi.rasi) */
+@import "couleurs"
+* {
+  background-color: transparent;
+  text-color: @fg;
+}
+window {
+  width: 560px;
+  location: center;
+  anchor: center;
+  background-color: @bg;
+  border: 2px;
+  border-color: @bordure;
+  border-radius: 16px;
+  padding: 14px;
+}
+mainbox { spacing: 10px; children: [ inputbar, message, listview ]; }
+inputbar {
+  background-color: @bg-alt;
+  border-radius: 10px;
+  padding: 10px 14px;
+  spacing: 10px;
+  children: [ prompt, entry ];
+}
+prompt { text-color: @accent; }
+entry { placeholder: "Tapez pour rechercher…"; placeholder-color: @muted; cursor: text; }
+message { background-color: @bg-alt; border-radius: 10px; padding: 8px 12px; }
+textbox { text-color: @muted; }
+listview { lines: 8; columns: 1; spacing: 4px; fixed-height: false; scrollbar: false; }
+element { padding: 8px 12px; border-radius: 10px; spacing: 12px; }
+element normal.normal, element alternate.normal { background-color: transparent; }
+element selected.normal { background-color: @sel; }
+element selected.normal element-text { text-color: @sel-fg; }
+element-icon { size: 1.6em; vertical-align: 0.5; }
+element-text { vertical-align: 0.5; highlight: bold; }
+mode-switcher { enabled: false; }

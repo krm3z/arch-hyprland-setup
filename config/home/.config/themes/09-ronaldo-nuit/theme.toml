@@ -1,0 +1,67 @@
+# Thème 9 — Ronaldo nuit : noir, rouge Manchester United, blanc.
+nom = "Ronaldo nuit"
+image = "noir-ronaldo-fond-noir.png"
+cadrage = [0.5, 0.5]
+phrase = "Le travail paie toujours."
+
+[couleurs]
+mode = "sombre"
+fond = "#0b0909"
+accent = "#d8261c"              # rouge Manchester United
+accent2 = "#ffffff"             # blanc
+accent3 = "#8e1510"             # rouge sombre
+fidelite = 0.5
+
+[polices]
+titre = "Anton"                 # épaisse, style maillot
+titre_graisse = 400
+titre_espacement = 2
+terminal = "JetBrainsMono Nerd Font"
+terminal_taille = 12
+terminal_style = "Bold"
+barre_horloge_taille = 15
+
+[barre]                         # noire, accents rouges
+fond = "#0a0808"
+opacite = 0.82
+flou = true
+
+[bordures]
+couleurs = ["accent"]
+taille = 3
+
+[animations]
+style = "energique"
+
+[fond_ecran]
+transition = "grow"
+position = "0.13,0.9"
+duree = 1.3
+
+[terminal]
+opacite = 0.6
+
+[horloge]                       # grande horloge dans la zone noire vide
+ancre = "top right"
+x = "7%"
+y = "9%"
+taille = 156
+couleur = "#ffffff"
+date_couleur = "accent_lisible"
+date_taille = 24
+date_majuscules = true
+date_espacement = 3
+alignement = "end"
+
+[icones]
+ancre = "top right"
+x = "7%"
+y = "43%"
+taille = 52
+fond = "#0a0808"
+fond_opacite = 0.7
+glyphe = "accent_lisible"
+
+[verrouillage]
+luminosite = 0.6
+phrase_couleur = "accent"

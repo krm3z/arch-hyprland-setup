@@ -1,0 +1,18 @@
+#!/bin/bash
+# Paramètres rapides (Super+I)
+profil=$(powerprofilesctl get 2>/dev/null)
+opts="󰖩  Wi-Fi / réseau\n󰂯  Bluetooth\n󰕾  Son\n󰏘  Apparence (thèmes GTK)\n󰸉  Thème (fond d'écran, couleurs)\n󰌵  Éclairage nocturne (activer/désactiver)\n󰾅  Mode d'énergie (actuel : $profil)\n󰐪  Imprimantes\n󰚰  Mises à jour\n󰆴  Effacer l'historique du presse-papiers\n󰋗  Fiche des raccourcis"
+choix=$(echo -e "$opts" | rofi -dmenu -i -p "Paramètres" -theme-str 'window{width:460px;} listview{lines:11;}')
+case "$choix" in
+  *Wi-Fi*) wifi-menu ;;
+  *Bluetooth) blueman-manager ;;
+  *Son) pavucontrol ;;
+  *Apparence*) nwg-look ;;
+  *Thème*) theme choisir ;;
+  *nocturne*) if pgrep -x hyprsunset >/dev/null; then pkill -x hyprsunset; notify-send "Éclairage nocturne" "Désactivé"; else hyprctl dispatch 'hl.dsp.exec_cmd("hyprsunset -t 4000")' >/dev/null; notify-send "Éclairage nocturne" "Activé (4000 K)"; fi ;;
+  *"Mode d'énergie"*) p=$(printf "power-saver\nbalanced\nperformance" | rofi -dmenu -p "Mode d'énergie" -theme-str 'window{width:340px;} listview{lines:3;}') && powerprofilesctl set "$p" && notify-send "Énergie" "Mode : $p" ;;
+  *Imprimantes) system-config-printer ;;
+  *"Mises à jour") mises-a-jour lancer ;;
+  *presse-papiers) presse-papiers effacer ;;
+  *Fiche*) raccourcis ;;
+esac

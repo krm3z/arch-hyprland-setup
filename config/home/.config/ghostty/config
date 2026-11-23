@@ -1,0 +1,45 @@
+# ════════════════════════════════════════════════════════════════════
+#  Ghostty — config principale de kerem
+#  Le thème actif (couleurs, police, transparence) est inclus en bas :
+#  themes/actuel.conf -> themes/<thème>.conf (un fichier par thème, généré
+#  par ~/.config/themes/bin/generer.py). Changer de thème : Super + F1.
+#  Le script « theme » recharge Ghostty tout seul (signal SIGUSR2).
+# ════════════════════════════════════════════════════════════════════
+
+# Police par défaut (remplacée par le thème)
+font-family = "JetBrainsMono Nerd Font"
+font-size = 12
+
+# Fenêtre
+window-padding-x = 12
+window-padding-y = 10
+window-padding-balance = true
+gtk-titlebar = false
+window-decoration = none
+confirm-close-surface = false
+background-blur = 30
+window-padding-color = background
+window-theme = ghostty
+background-opacity-cells = false
+adjust-cell-height = 12%
+font-thicken = true
+font-feature = calt
+cursor-style = bar
+minimum-contrast = 1.1
+window-inherit-working-directory = true
+unfocused-split-opacity = 0.85
+
+# Confort
+cursor-style-blink = true
+mouse-hide-while-typing = true
+copy-on-select = false
+scrollback-limit = 20000000
+shell-integration-features = cursor,sudo,title
+
+# Raccourcis façon Windows Terminal :
+# Ctrl+C copie s'il y a une sélection (sinon interrompt la commande), Ctrl+V colle
+keybind = performable:ctrl+c=copy_to_clipboard
+keybind = ctrl+v=paste_from_clipboard
+
+# Thème actif (doit rester à la fin)
+config-file = ?themes/actuel.conf

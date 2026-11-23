@@ -1,0 +1,46 @@
+#!/bin/bash
+# notifications — module de la barre + actions (mako)
+#   notifications etat            JSON pour waybar
+#   notifications historique      liste des notifications récentes (Super+N)
+#   notifications nepasderanger   activer / désactiver « Ne pas déranger »
+#   notifications effacer         fermer toutes les notifications affichées
+CLOCHE=$'\U000f009a'; CLOCHE_OFF=$'\U000f009b'
+dnd() { makoctl mode 2>/dev/null | grep -qx do-not-disturb; }
+compter() { makoctl "$1" -j 2>/dev/null | jq 'if type=="array" then length else (.data[0] // [] | length) end' 2>/dev/null || echo 0; }
+rafraichir() { pkill -RTMIN+10 waybar 2>/dev/null; }
+
+case "${1:-etat}" in
+  etat)
+    if ! pgrep -x mako >/dev/null; then
+      printf '{"text":"%s","tooltip":"Service de notifications arrêté","class":"dnd"}\n' "$CLOCHE_OFF"; exit; fi
+    v=$(compter list); h=$(compter history)
+    if dnd; then
+      printf '{"text":"%s","tooltip":"Ne pas déranger : activé\\nClic droit : désactiver","class":"dnd"}\n' "$CLOCHE_OFF"
+    elif [ "${v:-0}" -gt 0 ]; then
+      printf '{"text":"%s %s","tooltip":"%s notification(s) affichée(s)\\nClic : historique · clic milieu : tout fermer · clic droit : ne pas déranger","class":"notification"}\n' "$CLOCHE" "$v" "$v"
+    else
+      printf '{"text":"%s","tooltip":"%s notification(s) dans l’historique\\nClic : historique · clic droit : ne pas déranger","class":"aucune"}\n' "$CLOCHE" "${h:-0}"
+    fi ;;
+  nepasderanger)
+    makoctl mode -t do-not-disturb >/dev/null
+    rafraichir
+    dnd && msg="activé" || msg="désactivé"
+    dnd || notify-send -a Notifications -t 2000 "Ne pas déranger" "$msg" ;;
+  effacer)
+    makoctl dismiss --all; rafraichir ;;
+  historique)
+    liste=$(makoctl history -j 2>/dev/null | jq -r '
+        (if type=="array" then . else (.data[0] // []) end)[]
+        | [(.app_name | if type=="object" then .data else . end),
+           (.summary  | if type=="object" then .data else . end),
+           (.body     | if type=="object" then .data else . end)]
+        | "\(.[0]) — \(.[1])\(if .[2] != "" then " : " + (.[2] | gsub("\n"; " ")) else "" end)"' 2>/dev/null)
+    dnd && etat="désactiver" || etat="activer"
+    choix=$(printf '%s\n%s\n%s\n' "$CLOCHE_OFF  Ne pas déranger : $etat" "$CLOCHE  Réafficher la dernière notification" \
+             "${liste:-  (aucune notification récente)}" \
+      | rofi -dmenu -i -p "Notifications" -theme-str 'window{width:640px;} listview{lines:10;}') || exit 0
+    case "$choix" in
+      *"Ne pas déranger"*) "$0" nepasderanger ;;
+      *Réafficher*) makoctl restore ;;
+    esac ;;
+esac

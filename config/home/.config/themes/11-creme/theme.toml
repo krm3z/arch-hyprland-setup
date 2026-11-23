@@ -1,0 +1,71 @@
+# Thème 11 — Crème : le seul thème clair. Crème, bleu marine, accent pêche.
+nom = "Crème"
+image = "creme-no-risk.png"
+cadrage = [0.02, 0.5]           # décalé à gauche pour garder le « N » de « No Risk »
+phrase = "No risk, no story."
+
+[couleurs]
+mode = "clair"
+fond = "#f3ead6"                # crème
+texte = "#1b2350"               # bleu marine
+accent = "#f3a27f"              # pêche
+accent2 = "#1d2b6e"             # bleu marine
+accent3 = "#c8784e"
+fidelite = 0.6
+
+[polices]
+titre = "Caveat Brush"          # peinte, comme le texte de l'image
+titre_graisse = 400
+terminal = "ComicShannsMono Nerd Font"
+terminal_taille = 12
+barre_horloge_taille = 17
+
+[barre]                         # crème claire, texte bleu marine
+fond = "fond"
+opacite = 0.9
+flou = true
+texte = "texte"
+
+[bordures]                      # bleu marine
+couleurs = ["accent2"]
+taille = 2
+inactive = "accent2"
+inactive_opacite = 0.18
+
+[fenetres]
+ombre = 0.22
+
+[animations]
+style = "douce"
+
+[fond_ecran]
+transition = "grow"
+position = "0.15,0.2"
+duree = 1.6
+
+[terminal]
+opacite = 0.64
+
+[horloge]                       # en haut à gauche, au-dessus du texte peint
+ancre = "top left"
+x = "4%"
+y = "0%"
+taille = 116
+couleur = "texte"
+date_couleur = "accent3"
+date_taille = 26
+
+[icones]                        # en bas à gauche, sous le texte
+ancre = "bottom left"
+x = "4%"
+y = "4%"
+taille = 52
+fond = "#fffaf0"
+fond_opacite = 0.8
+glyphe = "accent2"
+nom_couleur = "texte"
+
+[verrouillage]
+luminosite = 0.95
+couleur_texte = "texte"
+phrase_couleur = "accent2"

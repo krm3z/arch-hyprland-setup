@@ -1,0 +1,29 @@
+#!/bin/sh
+# Entrées Arch Linux épurées (une par noyau installé dans /boot)
+set -e
+. "$pkgdatadir/grub-mkconfig_lib"
+BOOTREL=$(make_system_path_relative_to_its_root /boot); BOOTREL=${BOOTREL%/}
+for k in /boot/vmlinuz-*; do
+  [ -f "$k" ] || continue
+  name=${k#/boot/vmlinuz-}
+  case "$name" in
+    linux) title="Arch Linux" ;;
+    linux-lts) title="Arch Linux (LTS)" ;;
+    *) title="Arch Linux ($name)" ;;
+  esac
+  ucode=""
+  for u in intel-ucode.img amd-ucode.img; do [ -f "/boot/$u" ] && ucode="$ucode $BOOTREL/$u"; done
+  echo "Entrée trouvée : $title" >&2
+  cat <<ENTRY
+menuentry '$title' --class arch --class gnu-linux --class os \$menuentry_id_option 'arch-$name' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod ext2
+	search --no-floppy --fs-uuid --set=root ${GRUB_DEVICE_BOOT_UUID}
+	linux	$BOOTREL/vmlinuz-$name root=UUID=${GRUB_DEVICE_UUID} rw ${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}
+	initrd	$ucode $BOOTREL/initramfs-$name.img
+}
+ENTRY
+done

@@ -1,0 +1,12 @@
+#!/bin/bash
+# raccourcis — ouvre (ou ferme) la fiche des raccourcis dans une fenêtre flottante
+# aux couleurs du thème (Super+F2, Super+H, icône « Raccourcis » du bureau).
+CLASSE=fr.kerem.raccourcis
+pid=$(hyprctl clients -j | jq -r --arg c "$CLASSE" '.[] | select(.class == $c) | .pid' | head -1)
+if [ -n "$pid" ] && [ "$pid" != "null" ]; then
+    kill "$pid" 2>/dev/null
+    exit 0
+fi
+[ -f "$HOME/Bureau/Raccourcis.md" ] || raccourcis-generer --silencieux
+exec ghostty --class="$CLASSE" --title="Raccourcis clavier" --window-padding-x=18 --window-padding-y=14 \
+    --background-opacity=0.96 -e raccourcis-afficher

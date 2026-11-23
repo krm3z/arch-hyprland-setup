@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Affiche ~/Bureau/Raccourcis.md joliment, aux couleurs du thème actif (dans un terminal)."""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+FICHE = HOME / "Bureau" / "Raccourcis.md"
+COUL = HOME / ".config/themes/actuel/couleurs.json"
+
+
+def hx(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+try:
+    C = json.loads(COUL.read_text())
+except (OSError, ValueError):
+    C = {"fond": "#121214", "fond2": "#1f1f23", "fond3": "#2c2c31", "texte": "#ececef", "texte2": "#8b8b90",
+         "accent": "#e5484d", "accent_lisible": "#e5484d", "accent2_lisible": "#f5a524", "sur_accent": "#ffffff"}
+
+
+def fg(nom):
+    r, g, b = hx(C[nom])
+    return f"\033[38;2;{r};{g};{b}m"
+
+
+def bg(nom):
+    r, g, b = hx(C[nom])
+    return f"\033[48;2;{r};{g};{b}m"
+
+
+RAZ, GRAS, ITAL = "\033[0m", "\033[1m", "\033[3m"
+L = shutil.get_terminal_size((110, 40)).columns
+L = max(70, min(L, 130))
+MARGE = "  "
+
+
+def largeur(s):
+    return len(re.sub(r"\033\[[0-9;]*m", "", s))
+
+
+def touches(cellule):
+    """`Windows` + `F1` -> pastilles façon touches de clavier."""
+    morceaux = re.split(r"(`[^`]+`)", cellule)
+    out = ""
+    for m in morceaux:
+        if m.startswith("`") and m.endswith("`"):
+            out += bg("fond3") + fg("texte") + GRAS + " " + m[1:-1] + " " + RAZ
+        elif m:
+            out += fg("texte2") + m + RAZ
+    return out
+
+
+def couper(texte, l):
+    mots, lignes, cour = texte.split(), [], ""
+    for m in mots:
+        if len(cour) + len(m) + 1 > l and cour:
+            lignes.append(cour)
+            cour = m
+        else:
+            cour = (cour + " " + m).strip()
+    if cour:
+        lignes.append(cour)
+    return lignes or [""]
+
+
+def gras_md(s, base):
+    return re.sub(r"\*\*([^*]+)\*\*", lambda m: GRAS + m.group(1) + RAZ + base, s)
+
+
+def rendre(md):
+    out = []
+    lignes = md.splitlines()
+    col1 = 44
+    i = 0
+    while i < len(lignes):
+        ln = lignes[i]
+        if ln.startswith("# "):
+            titre = " " + ln[2:].upper() + " "
+            out += ["", MARGE + bg("accent") + fg("sur_accent") + GRAS + "  " + titre + "  " + RAZ,
+                    MARGE + fg("texte2") + "↑ ↓ ou molette pour défiler  ·  / pour chercher  ·  q pour fermer" + RAZ]
+        elif ln.startswith("## "):
+            t = ln[3:]
+            out += ["", MARGE + fg("accent_lisible") + GRAS + "■ " + t.upper() + RAZ,
+                    MARGE + fg("fond3") + "─" * (L - 6) + RAZ]
+        elif ln.startswith(">"):
+            t = re.sub(r"`([^`]+)`", r"\1", ln.lstrip("> ").strip())
+            for l2 in couper(t, L - 8):
+                out.append(MARGE + "  " + fg("texte2") + ITAL + gras_md(l2, fg("texte2") + ITAL) + RAZ)
+        elif ln.startswith("|"):
+            cells = [c.strip() for c in ln.strip("|").split("|")]
+            if set("".join(cells)) <= set("-: "):
+                i += 1
+                continue
+            if cells[0] in ("Raccourci", "Élément", "Icône"):
+                i += 1
+                continue
+            gauche = touches(cells[0]) if "`" in cells[0] else fg("accent2_lisible") + GRAS + cells[0] + RAZ
+            reste = " — ".join(c for c in cells[1:] if c)
+            w = largeur(gauche)
+            if w > col1:
+                out.append(MARGE + "  " + gauche)
+                pad = " " * (col1 + 2)
+                first = True
+            else:
+                pad = " " * (col1 - w)
+                first = False
+            for k, l2 in enumerate(couper(reste, L - col1 - 8)):
+                if k == 0 and not first:
+                    out.append(MARGE + "  " + gauche + pad + fg("texte") + l2 + RAZ)
+                else:
+                    out.append(MARGE + "  " + " " * col1 + fg("texte") + l2 + RAZ)
+        elif ln.strip():
+            for l2 in couper(ln, L - 6):
+                out.append(MARGE + fg("texte2") + l2 + RAZ)
+        else:
+            if out and out[-1] != "":
+                out.append("")
+        i += 1
+    out.append("")
+    return "\n".join(out)
+
+
+def main():
+    if not FICHE.exists():
+        subprocess.run(["raccourcis-generer", "--silencieux"])
+    md = FICHE.read_text() if FICHE.exists() else "# Raccourcis\n\nFiche introuvable."
+    texte = rendre(md)
+    if sys.stdout.isatty():
+        env = dict(os.environ, LESS="", LESSHISTFILE="-")
+        p = subprocess.Popen(["less", "-R", "-S", "--mouse", "--wheel-lines=3", "-~",
+                              "-P", " Raccourcis — q pour fermer ", "-"], stdin=subprocess.PIPE, env=env)
+        p.communicate(texte.encode())
+    else:
+        print(texte)
+
+
+if __name__ == "__main__":
+    main()

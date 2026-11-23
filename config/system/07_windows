@@ -1,0 +1,14 @@
+#!/bin/sh
+# Windows 11 (chargeur EFI sur la partition EFI, UUID 6C10-AD7F)
+echo "Entrée trouvée : Windows 11" >&2
+cat <<'ENTRY'
+if [ "$grub_platform" = "efi" ]; then
+menuentry 'Windows 11' --class windows --class os $menuentry_id_option 'windows11' {
+	insmod part_gpt
+	insmod fat
+	insmod chain
+	search --no-floppy --fs-uuid --set=root 6C10-AD7F
+	chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+}
+fi
+ENTRY

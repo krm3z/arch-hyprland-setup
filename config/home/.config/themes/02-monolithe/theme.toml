@@ -1,0 +1,64 @@
+# Thème 2 — Monolithe : orange ocre, bleu du bassin, rouge du monolithe.
+nom = "Monolithe"
+image = "desert-monolithe.jpg"
+cadrage = [0.5, 0.5]
+phrase = "Un pas après l'autre."
+
+[couleurs]
+mode = "sombre"
+fond = "#1d120a"
+accent = "#e98b2a"              # orange ocre
+accent2 = "#3d8fd6"             # bleu du bassin
+accent3 = "#e2482a"             # rouge du monolithe
+fidelite = 0.65
+
+[polices]
+titre = "Montserrat"            # géométrique et épaisse
+titre_graisse = 900
+terminal = "SpaceMono Nerd Font"
+terminal_taille = 11
+
+[barre]                         # sombre et semi-transparente
+fond = "fond"
+opacite = 0.62
+flou = false
+
+[bordures]                      # dégradé rouge -> orange
+couleurs = ["accent3", "accent"]
+angle = 90
+taille = 3
+
+[animations]
+style = "glissement"            # glissements lents
+
+[fond_ecran]
+transition = "wipe"
+angle = 30
+duree = 2.0
+
+[terminal]
+opacite = 0.6
+
+[horloge]                       # grande horloge en haut à gauche, dans le sable
+ancre = "top left"
+x = "3%"
+y = "1%"
+taille = 124
+couleur = "fond"
+date_couleur = "fond"
+date_taille = 22
+date_majuscules = true
+date_espacement = 3
+ombre = "legere"
+
+[icones]                        # dans le sable, en haut à droite
+ancre = "top right"
+x = "4%"
+y = "3%"
+taille = 52
+fond = "fond"
+fond_opacite = 0.6
+glyphe = "accent"
+
+[verrouillage]
+luminosite = 0.5

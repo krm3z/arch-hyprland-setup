@@ -1,0 +1,12 @@
+#!/bin/bash
+# Menu d'alimentation (Ctrl+Alt+Suppr / Super+X / bouton de la barre)
+opts="  Verrouiller\n󰒲  Mettre en veille\n󰍃  Se déconnecter\n  Redémarrer\n  Redémarrer sous Windows\n  Éteindre"
+choix=$(echo -e "$opts" | rofi -dmenu -i -p "Alimentation" -theme-str 'window{width:340px;} listview{lines:6;} inputbar{enabled:false;}')
+case "$choix" in
+  *Verrouiller) loginctl lock-session ;;
+  *veille) systemctl suspend ;;
+  *déconnecter) hyprctl dispatch 'hl.dsp.exit()' ;;
+  *"sous Windows") sudo -n /usr/bin/grub-reboot windows11 && systemctl reboot || notify-send -u critical "Erreur" "Impossible de programmer le redémarrage sous Windows" ;;
+  *Redémarrer) systemctl reboot ;;
+  *Éteindre) systemctl poweroff ;;
+esac

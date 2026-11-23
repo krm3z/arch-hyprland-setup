@@ -1,0 +1,7 @@
+#!/bin/bash
+# fond-ecran — le fond d'écran fait maintenant partie des thèmes (voir « theme »)
+case "${1:-menu}" in
+  aleatoire|hasard) exec theme hasard ;;
+  suivant) exec theme suivant ;;
+  *) exec theme choisir ;;
+esac

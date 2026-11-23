@@ -1,0 +1,24 @@
+#!/bin/bash
+# Menu Wi-Fi simple (clic sur l'icône réseau de la barre ou Super+I > Wi-Fi)
+notify-send -t 1500 -i network-wireless "Wi-Fi" "Recherche des réseaux…"
+if [ "$(nmcli -t -f WIFI g)" = "enabled" ]; then bascule=$'#off\t󰖪  Désactiver le Wi-Fi'; else bascule=$'#on\t󰖩  Activer le Wi-Fi'; fi
+liste=$(nmcli -t -e no -f IN-USE,SIGNAL,SECURITY,SSID dev wifi list --rescan yes 2>/dev/null | awk -F: '{ssid=$4; for(i=5;i<=NF;i++) ssid=ssid":"$i}
+  ssid!="" && !vu[ssid]++ { ic=($2>66)?"󰤨":($2>33)?"󰤥":"󰤯"; sec=($3==""||$3=="--")?"open":"lock"; lk=(sec=="lock")?"":" ";
+  cur=($1=="*")?"   ✓ connecté":""; printf "%s|%s\t%s %s  %s%s\n", sec, ssid, ic, lk, ssid, cur }')
+choix=$(printf '%s\n%s\n#avance\t󰒓  Paramètres réseau avancés\n' "$bascule" "$liste" | rofi -dmenu -i -p "Wi-Fi" -display-columns 2 -display-column-separator $'\t' -theme-str 'window{width:440px;}')
+[ -z "$choix" ] && exit 0
+cle=${choix%%$'\t'*}
+case "$cle" in
+  "#off") nmcli radio wifi off; exit ;;
+  "#on") nmcli radio wifi on; exit ;;
+  "#avance") exec nm-connection-editor ;;
+esac
+sec=${cle%%|*}; ssid=${cle#*|}
+ok(){ notify-send -i network-wireless "Wi-Fi" "Connecté à $ssid"; }
+if nmcli -t -f NAME connection show | grep -Fxq "$ssid"; then nmcli connection up id "$ssid" >/dev/null && { ok; exit; }; fi
+if [ "$sec" = "lock" ]; then
+  mdp=$(rofi -dmenu -password -p "Mot de passe « $ssid »" -theme-str 'window{width:440px;} listview{enabled:false;}') || exit 0
+  nmcli dev wifi connect "$ssid" password "$mdp" >/dev/null && ok || notify-send -u critical "Wi-Fi" "Échec de connexion à $ssid"
+else
+  nmcli dev wifi connect "$ssid" >/dev/null && ok || notify-send -u critical "Wi-Fi" "Échec de connexion à $ssid"
+fi

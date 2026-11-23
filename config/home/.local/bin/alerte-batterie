@@ -1,0 +1,11 @@
+#!/bin/bash
+# Notifications batterie faible (15 %) et critique (5 %)
+dejafait=100
+while sleep 60; do
+  b=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1); [ -z "$b" ] && exit 0
+  cap=$(<"$b/capacity"); st=$(<"$b/status")
+  if [ "$st" = "Discharging" ]; then
+    if [ "$cap" -le 5 ] && [ "$dejafait" -gt 5 ]; then notify-send -u critical -i battery-caution "Batterie critique" "$cap % — branchez le chargeur !"; dejafait=5
+    elif [ "$cap" -le 15 ] && [ "$dejafait" -gt 15 ]; then notify-send -u normal -i battery-low "Batterie faible" "$cap % restants"; dejafait=15; fi
+  else dejafait=100; fi
+done

@@ -1,0 +1,64 @@
+# Thème 6 — McQueen : rouge, orange du coucher de soleil, violet de la nuit.
+nom = "McQueen"
+image = "racing-mcqueen.png"
+cadrage = [0.5, 0.5]
+phrase = "Pied au plancher."
+
+[couleurs]
+mode = "sombre"
+fond = "#140c1c"
+accent = "#e02d24"              # rouge
+accent2 = "#f68b3c"             # orange du coucher de soleil
+accent3 = "#6a4bb5"             # violet de la nuit
+fidelite = 0.6
+
+[polices]
+titre = "Racing Sans One"       # sportive, italique, style course
+titre_graisse = 400
+terminal = "FiraCode Nerd Font"
+terminal_taille = 11
+barre_horloge_taille = 15
+
+[barre]                         # sombre, accents rouges
+fond = "fond"
+opacite = 0.78
+flou = true
+
+[bordures]                      # dégradé rouge -> orange, épaisses
+couleurs = ["accent", "accent2"]
+angle = 0
+taille = 4
+
+[animations]
+style = "nerveuse"
+
+[fond_ecran]
+transition = "wipe"
+angle = 0
+duree = 0.9
+bezier = ".1,.9,.2,1"
+
+[terminal]
+opacite = 0.58
+
+[horloge]                       # dans le ciel du coucher de soleil
+ancre = "top left"
+x = "6%"
+y = "0%"
+taille = 118
+couleur = "#fff4ea"
+date_couleur = "accent2"
+date_taille = 22
+
+[icones]
+ancre = "top left"
+x = "6%"
+y = "24.5%"
+taille = 52
+fond = "fond"
+fond_opacite = 0.6
+glyphe = "accent"
+
+[verrouillage]
+luminosite = 0.5
+phrase_couleur = "accent2"

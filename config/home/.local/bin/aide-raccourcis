@@ -1,0 +1,3 @@
+#!/bin/bash
+# Ancien nom conservé : ouvre la fiche des raccourcis (~/Bureau/Raccourcis.md)
+exec raccourcis

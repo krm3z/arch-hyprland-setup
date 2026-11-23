@@ -1,0 +1,67 @@
+# Thème 3 — Rochers : rouge terre, sable, accent turquoise du ciel.
+nom = "Rochers"
+image = "desert-rochers.jpg"
+cadrage = [0.5, 0.5]
+phrase = "Trace ta route."
+
+[couleurs]
+mode = "sombre"
+fond = "#24120c"
+accent = "#c8442a"              # rouge terre
+accent2 = "#ecc58a"             # sable
+accent3 = "#3fb3c2"             # turquoise du ciel
+fidelite = 0.6
+
+[polices]
+titre = "Rye"                   # style western
+titre_graisse = 400
+terminal = "BlexMono Nerd Font"
+terminal_taille = 12
+barre_horloge_taille = 13
+
+[barre]                         # couleur sable, peu transparente
+fond = "accent2"
+opacite = 0.9
+flou = true
+texte = "fond"
+accent = "accent"
+
+[bordures]                      # turquoise
+couleurs = ["accent3"]
+taille = 2
+
+[animations]
+style = "moyenne"
+
+[fond_ecran]
+transition = "wave"
+angle = 20
+duree = 1.6
+
+[terminal]
+opacite = 0.6
+
+[horloge]                       # dans le ciel bleu, entre les rochers
+ancre = "top left"
+x = "35%"
+y = "0%"
+taille = 92
+couleur = "fond"
+date_couleur = "fond"
+date_taille = 20
+ombre = "legere"
+
+[icones]                        # en colonne dans le ciel, à gauche
+ancre = "top left"
+x = "1.5%"
+y = "5%"
+disposition = "colonne"
+taille = 44
+espacement = 8
+fond = "accent2"
+fond_opacite = 0.85
+glyphe = "accent"
+nom_couleur = "fond"
+
+[verrouillage]
+luminosite = 0.5

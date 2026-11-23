@@ -1,0 +1,18 @@
+#!/bin/bash
+# grille-applis — ouvre (ou ferme) la grille de toutes les applications installées
+# (icônes + noms, recherche en tapant, catégories), aux couleurs du thème actif.
+# Windows + A, ou l'icône « Applications » du bureau. Échap ou clic à côté pour fermer.
+# Couleurs : ~/.config/nwg-drawer/drawer.css → ~/.config/themes/actuel/gen/nwg-drawer.css
+# (régénéré par « theme regenerer », suit automatiquement le thème actif).
+if pgrep -x nwg-drawer >/dev/null; then
+    pkill -x nwg-drawer
+    exit 0
+fi
+CSS="$HOME/.config/nwg-drawer/drawer.css"
+if [ ! -L "$CSS" ]; then
+    mkdir -p "${CSS%/*}"
+    ln -sfn "$HOME/.config/themes/actuel/gen/nwg-drawer.css" "$CSS"
+fi
+exec nwg-drawer -lang fr -term ghostty -fm thunar -c 7 -is 64 -spacing 18 -ovl -nofs -closebtn right \
+    -pblock "pidof hyprlock || hyprlock" -pbsleep "systemctl suspend" \
+    -pbreboot "systemctl reboot" -pbpoweroff "systemctl poweroff" -pbsize 36

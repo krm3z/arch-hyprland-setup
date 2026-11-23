@@ -1,0 +1,11 @@
+#!/bin/bash
+# capture [zone|ecran|fenetre|annoter] — enregistre dans ~/Pictures/Captures et copie dans le presse-papiers
+DIR="$HOME/Pictures/Captures"; mkdir -p "$DIR"
+NOM="Capture_$(date +%Y-%m-%d_%H-%M-%S).png"
+case "${1:-zone}" in
+  zone)    hyprshot -z -m region -o "$DIR" -f "$NOM" ;;
+  ecran)   hyprshot -m output -m active -o "$DIR" -f "$NOM" ;;
+  fenetre) hyprshot -m window -m active -o "$DIR" -f "$NOM" ;;
+  annoter) zone=$(slurp -d) || exit 0
+           grim -g "$zone" - | satty --filename - --output-filename "$DIR/$NOM" --copy-command wl-copy --early-exit --initial-tool arrow ;;
+esac

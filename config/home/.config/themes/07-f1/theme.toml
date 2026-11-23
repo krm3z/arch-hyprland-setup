@@ -1,0 +1,68 @@
+# Thème 7 — F1 : rouge Ferrari, jaune, gris asphalte.
+nom = "F1"
+image = "racing-f1.png"
+cadrage = [0.5, 0.5]
+phrase = "Chaque dixième compte."
+
+[couleurs]
+mode = "sombre"
+fond = "#18181a"
+accent = "#dc1f1a"              # rouge Ferrari
+accent2 = "#f7d117"             # jaune
+accent3 = "#5f6066"             # gris asphalte
+fidelite = 0.6
+
+[polices]
+titre = "Saira Condensed"       # tableau de bord de course, condensée
+titre_graisse = 700
+titre_espacement = 1
+terminal = "IosevkaTerm Nerd Font"
+terminal_taille = 13
+barre_horloge_taille = 15
+
+[barre]                         # gris asphalte, accent jaune
+fond = "#2b2b2e"
+opacite = 0.88
+flou = false
+accent = "accent2"
+
+[bordures]                      # rouge vif
+couleurs = ["accent"]
+taille = 3
+
+[animations]
+style = "eclair"
+
+[fond_ecran]
+transition = "left"
+duree = 0.6
+
+[terminal]
+opacite = 0.62
+
+[horloge]                       # chrono sur la piste (en bas à gauche)
+ancre = "bottom left"
+x = "3%"
+y = "3%"
+taille = 128
+couleur = "#ffffff"
+date_couleur = "accent2"
+date_taille = 20
+date_majuscules = true
+date_espacement = 3
+secondes = true
+surtitre = "TOUR EN COURS"
+style = ".surtitre { background-color: #d12820; color: #ffffff; padding: 3px 12px; border-radius: 4px; font-size: 16px; font-weight: 700; letter-spacing: 3px; text-shadow: none; margin-bottom: -6px; }"
+
+[icones]                        # sur la piste, en bas à droite
+ancre = "bottom right"
+x = "3%"
+y = "3%"
+taille = 52
+fond = "#2b2b2e"
+fond_opacite = 0.75
+glyphe = "accent2"
+
+[verrouillage]
+luminosite = 0.5
+phrase_couleur = "accent2"

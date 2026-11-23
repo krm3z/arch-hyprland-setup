@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Pastille Claude de la barre : consommation Claude Code du bloc de 5 h en cours
+et heure du prochain reset (via ccusage, hors ligne). Sortie JSON pour waybar."""
+import datetime
+import json
+import subprocess
+
+GLYPHE = "✻"
+
+
+def euro_fr(x):
+    return f"{x:,.2f}".replace(",", " ").replace(".", ",")
+
+
+def tokens_fr(n):
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f} M".replace(".", ",")
+    if n >= 1_000:
+        return f"{n / 1_000:.0f} k"
+    return str(n)
+
+
+def sortie(texte, infobulle, classe):
+    print(json.dumps({"text": texte, "tooltip": infobulle, "class": classe}, ensure_ascii=False))
+
+
+def main():
+    try:
+        r = subprocess.run(["ccusage", "blocks", "--active", "--json", "--offline"],
+                           capture_output=True, text=True, timeout=25)
+        blocs = [b for b in json.loads(r.stdout).get("blocks", []) if b.get("isActive")]
+    except Exception:
+        sortie(GLYPHE + " Claude", "ccusage indisponible\nClic : ouvrir claude.ai/settings/usage", "erreur")
+        return
+    if not blocs:
+        sortie(GLYPHE + " —", "Aucune session Claude Code en cours.\n"
+               "Un bloc de 5 h démarre au premier message.\nClic : ouvrir claude.ai/settings/usage", "inactif")
+        return
+    b = blocs[0]
+    fin = datetime.datetime.fromisoformat(b["endTime"].replace("Z", "+00:00")).astimezone()
+    debut = datetime.datetime.fromisoformat(b["startTime"].replace("Z", "+00:00")).astimezone()
+    reste = fin - datetime.datetime.now().astimezone()
+    h, m = divmod(max(0, int(reste.total_seconds() // 60)), 60)
+    cout = b.get("costUSD", 0.0)
+    tok = b.get("totalTokens", 0)
+    proj = (b.get("projection") or {}).get("totalCost")
+    modeles = ", ".join(x.replace("claude-", "") for x in b.get("models", []) if x != "<synthetic>")
+    texte = f"{GLYPHE} {tokens_fr(tok)} · ↻ {fin:%H:%M}"
+    info = [f"<b>Claude Code — bloc de 5 h en cours</b>",
+            f"Début : {debut:%H:%M}   Reset : {fin:%H:%M} (dans {h} h {m:02d})",
+            f"Tokens : {tok:,}".replace(",", " "),
+            f"Coût équivalent API : {euro_fr(cout)} $"]
+    if proj:
+        info.append(f"Projection en fin de bloc : {euro_fr(proj)} $")
+    if modeles:
+        info.append(f"Modèles : {modeles}")
+    info.append("Clic : ouvrir claude.ai/settings/usage")
+    sortie(texte, "\n".join(info), "actif")
+
+
+if __name__ == "__main__":
+    main()

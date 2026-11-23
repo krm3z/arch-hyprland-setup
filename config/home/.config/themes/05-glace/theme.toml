@@ -1,0 +1,66 @@
+# Thème 5 — Glace : bleu glacier, cyan, blanc.
+nom = "Glace"
+image = "glace-canyon.jpg"
+cadrage = [0.5, 0.5]
+phrase = "Garde la tête froide."
+
+[couleurs]
+mode = "sombre"
+fond = "#0c1d27"
+accent = "#45d4e6"              # cyan
+accent2 = "#7fb9d8"             # bleu glacier
+accent3 = "#f2fbff"             # blanc
+fidelite = 0.55
+
+[polices]
+titre = "Exo 2"                 # fine et moderne
+titre_graisse = 200
+titre_espacement = 2
+terminal = "GeistMono Nerd Font"
+terminal_taille = 12
+
+[barre]                         # blanche translucide et floutée : verre givré
+fond = "#ffffff"
+opacite = 0.38
+flou = true
+texte = "fond"
+accent = "accent2"
+
+[bordures]                      # cyan fin
+couleurs = ["accent"]
+taille = 1
+
+[animations]
+style = "nette"
+
+[fond_ecran]
+transition = "grow"
+position = "top-right"
+duree = 1.5
+
+[terminal]
+opacite = 0.56
+
+[horloge]                       # dans la zone claire (ciel en haut à droite)
+ancre = "top right"
+x = "5%"
+y = "4%"
+taille = 116
+couleur = "fond"
+date_couleur = "fond"
+date_taille = 21
+date_espacement = 3
+
+[icones]
+ancre = "top right"
+x = "4%"
+y = "26%"
+taille = 52
+fond = "#ffffff"
+fond_opacite = 0.5
+glyphe = "fond"
+nom_couleur = "fond"
+
+[verrouillage]
+luminosite = 0.6
+phrase_couleur = "accent"

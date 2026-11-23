@@ -1,0 +1,205 @@
+// Waybar — forme fixe (générée par ~/.config/themes/bin/installer-barre.py).
+// Les couleurs viennent du thème actif : style.css -> ~/.config/themes/actuel/gen/waybar.css
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "margin-top": 6,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 0,
+  "modules-left": [
+    "custom/claude",
+    "hyprland/workspaces"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "group/systeme",
+    "group/controles",
+    "group/session"
+  ],
+  "custom/claude": {
+    "exec": "claude-usage",
+    "return-type": "json",
+    "interval": 30,
+    "signal": 9,
+    "format": "{}",
+    "escape": false,
+    "tooltip": true,
+    "on-click": "setsid -f google-chrome-stable https://claude.ai/settings/usage",
+    "on-click-right": "pkill -RTMIN+9 waybar"
+  },
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "persistent-workspaces": {
+      "*": 5
+    },
+    "on-click": "activate",
+    "sort-by-number": true,
+    "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+    "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+  },
+  "clock": {
+    "format": "{:L%a %d %b  %H:%M}",
+    "format-alt": "{:L%A %d %B %Y  %H:%M:%S}",
+    "interval": 1,
+    "locale": "fr_FR.UTF-8",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "months": "<b>{}</b>",
+        "today": "<b><u>{}</u></b>"
+      }
+    },
+    "actions": {
+      "on-scroll-up": "shift_down",
+      "on-scroll-down": "shift_up"
+    }
+  },
+  "group/systeme": {
+    "orientation": "horizontal",
+    "modules": [
+      "cpu",
+      "memory",
+      "temperature"
+    ]
+  },
+  "group/controles": {
+    "orientation": "horizontal",
+    "modules": [
+      "pulseaudio",
+      "network",
+      "bluetooth",
+      "backlight",
+      "battery"
+    ]
+  },
+  "group/session": {
+    "orientation": "horizontal",
+    "modules": [
+      "custom/notif",
+      "custom/alim"
+    ]
+  },
+  "cpu": {
+    "interval": 3,
+    "format": "󰻠 {usage}%",
+    "tooltip-format": "Processeur : {usage} %",
+    "on-click": "setsid -f missioncenter"
+  },
+  "memory": {
+    "interval": 5,
+    "format": "󰍛 {percentage}%",
+    "tooltip-format": "Mémoire : {used:0.1f} Go / {total:0.1f} Go utilisés",
+    "on-click": "setsid -f missioncenter"
+  },
+  "temperature": {
+    "hwmon-path-abs": "/sys/devices/platform/coretemp.0/hwmon",
+    "input-filename": "temp1_input",
+    "critical-threshold": 90,
+    "interval": 5,
+    "format": "{icon} {temperatureC}°",
+    "format-icons": [
+      "󱃂",
+      "󰔏",
+      "󱃃"
+    ],
+    "tooltip-format": "Température du processeur : {temperatureC} °C"
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟",
+    "format-bluetooth": "󰂰 {volume}%",
+    "format-icons": {
+      "headphone": "󰋋",
+      "default": [
+        "󰕿",
+        "󰖀",
+        "󰕾"
+      ]
+    },
+    "scroll-step": 5,
+    "max-volume": 100,
+    "tooltip-format": "{desc} — {volume} %\nClic : mixeur · clic droit : muet",
+    "on-click": "pavucontrol",
+    "on-click-right": "swayosd-client --output-volume mute-toggle"
+  },
+  "network": {
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "format-disabled": "󰤭",
+    "format-icons": [
+      "󰤯",
+      "󰤢",
+      "󰤥",
+      "󰤨"
+    ],
+    "tooltip-format-wifi": "{essid} ({signalStrength} %)\n{ipaddr}\nClic : choisir un réseau",
+    "tooltip-format-ethernet": "{ifname} — {ipaddr}",
+    "tooltip-format-disconnected": "Déconnecté — cliquer pour choisir un réseau",
+    "on-click": "wifi-menu",
+    "on-click-right": "nm-connection-editor"
+  },
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": "Bluetooth : {status}\nClic : appareils · clic droit : activer/désactiver",
+    "tooltip-format-connected": "{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "on-click": "blueman-manager",
+    "on-click-right": "rfkill toggle bluetooth"
+  },
+  "backlight": {
+    "format": "{icon} {percent}%",
+    "format-icons": [
+      "󰃞",
+      "󰃟",
+      "󰃠"
+    ],
+    "on-scroll-up": "swayosd-client --brightness raise",
+    "on-scroll-down": "swayosd-client --brightness lower --min-brightness 1",
+    "tooltip-format": "Luminosité : {percent} % (molette pour régler)"
+  },
+  "battery": {
+    "interval": 30,
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
+    "format-icons": [
+      "󰁺",
+      "󰁼",
+      "󰁾",
+      "󰂀",
+      "󰁹"
+    ],
+    "tooltip-format": "{timeTo}\n{power:.1f} W",
+    "format-time": "{H} h {M} min"
+  },
+  "custom/notif": {
+    "exec": "notifications etat",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 10,
+    "format": "{}",
+    "escape": false,
+    "on-click": "notifications historique",
+    "on-click-right": "notifications nepasderanger",
+    "on-click-middle": "notifications effacer"
+  },
+  "custom/alim": {
+    "format": "⏻",
+    "tooltip-format": "Alimentation : verrouiller, veille, redémarrer, éteindre",
+    "on-click": "menu-alimentation"
+  }
+}

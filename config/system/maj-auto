@@ -1,0 +1,35 @@
+#!/bin/bash
+# Mise à jour automatique : une fois par jour, au démarrage (lancé par maj-auto.timer, en root)
+USER_NOM=kerem
+STAMP=/var/lib/maj-auto/derniere
+LOG=/var/log/maj-auto.log
+mkdir -p /var/lib/maj-auto
+[ "$(cat $STAMP 2>/dev/null)" = "$(date +%F)" ] && exit 0
+for _ in $(seq 1 30); do ping -c1 -W2 archlinux.org >/dev/null 2>&1 && break; sleep 4; done
+ping -c1 -W2 archlinux.org >/dev/null 2>&1 || exit 0
+[ -e /var/lib/pacman/db.lck ] && exit 0
+
+notif() {
+  uid=$(id -u $USER_NOM)
+  runuser -u $USER_NOM -- env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus notify-send -a "Mises à jour" "$1" "$2" 2>/dev/null
+}
+
+{
+  echo "=== $(date '+%F %T') ==="
+  command -v timeshift >/dev/null && timeshift --create --comments "avant maj-auto" --tags D 2>&1 | tail -3
+  if pacman -Syu --noconfirm; then
+    ok=1
+  else
+    ok=0
+  fi
+  command -v flatpak >/dev/null && flatpak update -y --noninteractive
+  echo "résultat pacman: $ok"
+} >> $LOG 2>&1
+
+if [ "$ok" = 1 ]; then
+  date +%F > $STAMP
+  notif "Système mis à jour" "pacman + Flatpak. Redémarre si le noyau a changé."
+else
+  notif "Échec de la mise à jour" "Voir /var/log/maj-auto.log"
+fi
+runuser -u $USER_NOM -- pkill -RTMIN+8 waybar 2>/dev/null

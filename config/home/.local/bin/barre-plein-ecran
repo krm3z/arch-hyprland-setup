@@ -1,0 +1,25 @@
+#!/bin/bash
+# En plein écran, amener la souris tout en haut de l'écran fait apparaître la barre
+# (comme sous Windows) ; elle disparaît quand la souris redescend.
+# Une 2e instance de waybar (couche « overlay », donc au-dessus du plein écran) est lancée à la demande.
+CONF="$HOME/.config/waybar/config.jsonc"
+TMP="${XDG_RUNTIME_DIR:-/tmp}/waybar-survol.jsonc"
+PID=""
+montrer() {
+    [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null && return
+    sed -e 's/"layer": "top"/"layer": "overlay", "exclusive": false/' -e 's/"margin-top": 6/"margin-top": -34/' "$CONF" > "$TMP"
+    waybar -c "$TMP" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
+    PID=$!
+}
+cacher() { [ -n "$PID" ] && { kill "$PID" 2>/dev/null; PID=""; }; }
+trap 'cacher; exit' TERM INT EXIT
+while sleep 0.15; do
+    fs=$(hyprctl activewindow -j 2>/dev/null | grep -o '"fullscreen": *[0-9]' | grep -o '[0-9]$')
+    if [ "$fs" = "2" ]; then
+        y=$(hyprctl cursorpos -j 2>/dev/null | grep -o '"y": *-\?[0-9]*' | grep -o '[-0-9]*$')
+        if [ -n "$y" ] && [ "$y" -le 1 ]; then montrer
+        elif [ -n "$y" ] && [ "$y" -gt 50 ]; then cacher; fi
+    else
+        cacher
+    fi
+done

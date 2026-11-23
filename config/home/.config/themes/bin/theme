@@ -1,0 +1,176 @@
+#!/bin/bash
+# ════════════════════════════════════════════════════════════════════
+#  theme — change tout le bureau d'un coup, sans redémarrer
+#  (fond d'écran animé, couleurs, polices, barre, bordures, animations,
+#   terminal Ghostty, lanceur, notifications, verrouillage, widgets)
+#
+#  theme suivant | precedent     thème suivant / précédent (Super+F1 / Super+Maj+F1)
+#  theme choisir                 liste des thèmes avec aperçus (Super+W)
+#  theme hasard                  un thème au hasard (Super+Maj+W)
+#  theme appliquer <nom>         ex. : theme appliquer glace   (ou 05-glace)
+#  theme actuel | liste          nom du thème actif / liste des thèmes
+#  theme regenerer [nom]         reconstruire les fichiers après avoir modifié un theme.toml
+#  theme barre                   relancer waybar + widgets eww
+#  theme demarrage               appelé par Hyprland au démarrage (dernier thème choisi)
+# ════════════════════════════════════════════════════════════════════
+R="$HOME/.config/themes"
+ACTUEL="$R/actuel"
+GHOSTTY="$HOME/.config/ghostty/themes"
+mapfile -t THEMES < <(find "$R" -mindepth 1 -maxdepth 1 -type d -name '[0-9][0-9]-*' -printf '%f\n' | sort)
+
+nom_actuel() { [ -L "$ACTUEL" ] && basename "$(readlink -f "$ACTUEL")"; }
+
+trouver() {  # accepte « 05-glace », « glace » ou « Glace »
+    local c="${1,,}"
+    for t in "${THEMES[@]}"; do
+        [ "$t" = "$c" ] || [ "${t#*-}" = "$c" ] && { echo "$t"; return 0; }
+    done
+    return 1
+}
+
+indice() { for i in "${!THEMES[@]}"; do [ "${THEMES[$i]}" = "$1" ] && { echo "$i"; return; }; done; echo -1; }
+
+lancer() { setsid -f "$@" >/dev/null 2>&1; }
+
+demarrer_awww() {
+    if ! awww query >/dev/null 2>&1; then
+        pkill -x hyprpaper 2>/dev/null
+        lancer awww-daemon
+        for _ in $(seq 60); do awww query >/dev/null 2>&1 && return 0; sleep 0.1; done
+    fi
+}
+
+fond_ecran() {  # $1 = image, $2 = oui/non (transition animée)
+    demarrer_awww
+    if [ "$2" = oui ]; then
+        awww img "$1" --resize crop --transition-type "$TR_TYPE" --transition-duration "$TR_DUREE" \
+            --transition-fps "$TR_FPS" --transition-angle "$TR_ANGLE" --transition-pos "$TR_POS" \
+            --transition-bezier "$TR_BEZIER" >/dev/null 2>&1 &
+    else
+        awww img "$1" --resize crop --transition-type none >/dev/null 2>&1
+    fi
+}
+
+barre() {
+    if pgrep -x waybar >/dev/null; then pkill -SIGUSR2 -x waybar; sleep 0.4; fi
+    pgrep -x waybar >/dev/null || lancer waybar        # relance si absente (ou tombée au rechargement)
+}
+
+widgets() {
+    if ! eww ping >/dev/null 2>&1; then
+        lancer eww daemon
+        for _ in $(seq 50); do eww ping >/dev/null 2>&1 && break; sleep 0.1; done
+    else
+        eww reload >/dev/null 2>&1
+    fi
+    eww close-all >/dev/null 2>&1
+    eww open-many horloge icones >/dev/null 2>&1
+}
+
+grille() {  # nwg-drawer (Windows + A) : son CSS suit le thème actif via un lien ;
+            # on ferme une grille ouverte pour qu'elle se rouvre aux nouvelles couleurs
+    mkdir -p "$HOME/.config/nwg-drawer"
+    ln -sfn "$ACTUEL/gen/nwg-drawer.css" "$HOME/.config/nwg-drawer/drawer.css"
+    pkill -x nwg-drawer 2>/dev/null
+}
+
+notifications() {
+    if pgrep -x mako >/dev/null; then makoctl reload; else pkill -x swaync 2>/dev/null; lancer mako; fi
+}
+
+accent_gnome() {  # applis GNOME/libadwaita (« Logiciels »…) : couleur d'accent la plus proche du thème
+    local c
+    c=$(python3 -I - "$1/couleurs.json" <<'PY' 2>/dev/null
+import json, math, sys
+def oklab(x):  # renvoie (a, b) de l'espace OKLab : teinte perçue
+    x = x.lstrip("#")
+    lin = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (lin(int(x[i:i + 2], 16) / 255) for i in (0, 2, 4))
+    l, m, s = ((u * r + v * g + w * b) ** (1 / 3) for u, v, w in (
+        (0.4122214708, 0.5363325363, 0.0514459929), (0.2119034982, 0.6806995451, 0.1073969566),
+        (0.0883024619, 0.2817188376, 0.6299787005)))
+    return (1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
+a, b = oklab(json.load(open(sys.argv[1]))["accent"])
+if math.hypot(a, b) < 0.04:  # accent presque gris
+    print("slate"); raise SystemExit
+h = math.atan2(b, a)
+gnome = {"blue": "3584e4", "teal": "2190a4", "green": "3a944a", "yellow": "c88800",
+         "orange": "ed5b00", "red": "e62d42", "pink": "d56199", "purple": "9141ac"}
+def ecart(k):
+    ga, gb = oklab(gnome[k])
+    d = abs(math.atan2(gb, ga) - h)
+    return min(d, 2 * math.pi - d)
+print(min(gnome, key=ecart))
+PY
+)
+    [ -n "$c" ] && gsettings set org.gnome.desktop.interface accent-color "$c" 2>/dev/null
+}
+
+appliquer() {  # $1 = dossier du thème, $2 = oui/non (animation + notification)
+    local t="$1" anim="${2:-oui}" d="$R/$1"
+    [ -f "$d/gen/env.sh" ] || python3 "$R/bin/generer.py" "$t" >/dev/null || exit 1
+    # shellcheck disable=SC1091
+    source "$d/gen/env.sh"
+    ln -sfn "$t" "$ACTUEL"                               # mémorise le choix (survit au redémarrage)
+    ln -sfn "$COURT.conf" "$GHOSTTY/actuel.conf"         # Ghostty : fichier du thème inclus dans la config
+    ln -sfn "$d/gen/fond.jpg" "$HOME/.cache/fond-actuel"
+    fond_ecran "$d/gen/fond.jpg" "$anim"
+    [ "$anim" = oui ] && hyprctl reload config-only >/dev/null 2>&1   # bordures, flou, animations
+    barre
+    notifications
+    grille
+    accent_gnome "$d"
+    pkill -SIGUSR2 -x ghostty 2>/dev/null                # Ghostty recharge sa config
+    pkill -SIGUSR1 -x kitty 2>/dev/null                  # kitty (secours) aussi
+    widgets
+    if [ "$anim" = oui ]; then
+        sleep 0.3
+        notify-send -a "Thèmes" -i "$d/gen/apercu.png" -h string:x-canonical-private-synchronous:theme \
+            "Thème : $NOM" "« $PHRASE »"
+    fi
+}
+
+verrouiller() {  # un seul changement de thème à la fois (appuis rapides sur Super+F1)
+    exec 9>"${XDG_RUNTIME_DIR:-/tmp}/theme.lock"
+    flock -w 15 9
+}
+
+decaler() {  # $1 = +1 / -1
+    local n=${#THEMES[@]} i
+    i=$(indice "$(nom_actuel)")
+    [ "$i" -lt 0 ] && i=0 || i=$(( (i + $1 + n) % n ))
+    appliquer "${THEMES[$i]}"
+}
+
+case "${1:-suivant}" in
+    suivant)   verrouiller; decaler 1 ;;
+    precedent) verrouiller; decaler -1 ;;
+    hasard)
+        verrouiller
+        a=$(nom_actuel); c=$a
+        while [ "$c" = "$a" ] && [ ${#THEMES[@]} -gt 1 ]; do c=${THEMES[RANDOM % ${#THEMES[@]}]}; done
+        appliquer "$c" ;;
+    appliquer|set)
+        t=$(trouver "${2:-}") || { echo "Thème inconnu : ${2:-}. Thèmes : ${THEMES[*]}" >&2; exit 1; }
+        verrouiller; appliquer "$t" ;;
+    choisir|menu)
+        i=$(for t in "${THEMES[@]}"; do
+                ( source "$R/$t/gen/env.sh"; printf '%s  ·  %s\0icon\x1f%s\n' "$NOM" "$PHRASE" "$R/$t/gen/apercu.png" )
+            done | rofi -dmenu -i -p "Thème" -format i -show-icons \
+                   -theme-str 'element-icon{size:4.2em;} listview{lines:6;} window{width:560px;}') || exit 0
+        [ -n "$i" ] && { verrouiller; appliquer "${THEMES[$i]}"; } ;;
+    actuel)
+        t=$(nom_actuel); [ -n "$t" ] && ( source "$R/$t/gen/env.sh"; echo "$t ($NOM)" ) ;;
+    liste)
+        for t in "${THEMES[@]}"; do ( source "$R/$t/gen/env.sh" 2>/dev/null; printf '%-20s %s\n' "$t" "${NOM:-?}" ); done ;;
+    regenerer)
+        verrouiller; shift; python3 "$R/bin/generer.py" "$@"
+        t=$(nom_actuel); [ -n "$t" ] && appliquer "$t" non && hyprctl reload config-only >/dev/null ;;
+    barre)
+        pkill -x waybar; sleep 0.3; lancer waybar; widgets ;;
+    demarrage)
+        verrouiller; t=$(nom_actuel); [ -z "$t" ] && t=${THEMES[0]}
+        appliquer "$t" non ;;
+    *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac

@@ -1,0 +1,21 @@
+configuration {
+  modi: "drun,run,window,calc,emoji";
+  show-icons: true;
+  icon-theme: "Papirus-Dark";
+  terminal: "ghostty";
+  drun-display-format: "{name}";
+  display-drun: "  Rechercher";
+  display-run: "  Exécuter";
+  display-window: "  Fenêtres";
+  display-calc: "  Calcul";
+  display-emoji: "  Émojis";
+  matching: "fuzzy";
+  sort: true;
+  sorting-method: "fzf";
+  case-sensitive: false;
+  hover-select: true;
+  me-select-entry: "";
+  me-accept-entry: "MousePrimary";
+  kb-cancel: "Escape,Super_L,Super_R";
+}
+@theme "minimal"

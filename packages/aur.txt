@@ -1,0 +1,12 @@
+bibata-cursor-theme-bin
+ccusage
+claude-desktop
+eww
+github-desktop-bin
+google-chrome
+otf-bebas-neue-git
+teams-for-linux
+ttf-quicksand-variable
+ttf-shippori-mincho
+visual-studio-code-bin
+yay-bin

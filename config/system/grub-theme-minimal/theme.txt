@@ -1,0 +1,60 @@
+# Thème GRUB « minimal » — fond noir-porsche, accent rouge
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#0b0b0c"
+terminal-font: "JetBrainsMono Regular 18"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ label {
+  left = 9%
+  top = 31%
+  width = 40%
+  height = 40
+  text = "Choisissez un système"
+  font = "Inter Regular 16"
+  color = "#8b8b90"
+}
+
++ boot_menu {
+  left = 9%
+  top = 36%
+  width = 34%
+  height = 40%
+  item_font = "Inter Regular 26"
+  item_color = "#a8a8ad"
+  selected_item_font = "InterSemi Regular 26"
+  selected_item_color = "#ffffff"
+  icon_width = 34
+  icon_height = 34
+  item_icon_space = 22
+  item_height = 66
+  item_padding = 18
+  item_spacing = 12
+  selected_item_pixmap_style = "select_*.png"
+  scrollbar = false
+}
+
++ label {
+  id = "__timeout__"
+  left = 9%
+  top = 80%
+  width = 40%
+  height = 30
+  text = "Démarrage d'Arch Linux dans %d s"
+  font = "Inter Regular 16"
+  color = "#e5484d"
+}
+
++ label {
+  left = 9%
+  top = 92%
+  width = 82%
+  height = 30
+  text = "↑ ↓  choisir     Entrée  démarrer     E  modifier     C  console"
+  font = "Inter Regular 16"
+  color = "#6e6e73"
+}

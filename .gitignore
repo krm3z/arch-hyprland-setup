@@ -1,0 +1,9 @@
+# fichiers générés / sauvegardes / médias non redistribuables
+**/gen/
+**/couleurs.json
+**/__pycache__/
+*.avant-*
+*.bak
+*.bak-*
+Pictures/
+config/home/Pictures/

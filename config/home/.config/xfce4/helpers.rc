@@ -1,0 +1,4 @@
+TerminalEmulator=ghostty
+TerminalEmulatorDismissed=true
+FileManager=thunar
+WebBrowser=google-chrome-stable

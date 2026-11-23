@@ -1,0 +1,8 @@
+[Unit]
+Description=Mise à jour automatique au démarrage
+
+[Timer]
+OnBootSec=2min
+
+[Install]
+WantedBy=timers.target

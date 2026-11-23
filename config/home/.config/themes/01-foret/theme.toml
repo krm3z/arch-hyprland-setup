@@ -1,0 +1,65 @@
+# Thème 1 — Forêt : vert mousse, jaune paille de la brume, accent vert vif.
+# Après modification : lancer « theme regenerer » puis « theme appliquer foret ».
+nom = "Forêt"
+image = "foret-brume.jpg"
+cadrage = [0.5, 0.5]          # centre du recadrage au format de l'écran (x, y de 0 à 1)
+phrase = "Respire."
+
+[couleurs]                      # indications : la couleur finale est prise dans l'image, au plus proche
+mode = "sombre"
+fond = "#1c2614"                # vert mousse très sombre
+accent = "#9fd23c"              # vert vif
+accent2 = "#e3d39b"             # jaune paille de la brume
+accent3 = "#5e7d2c"             # vert mousse
+fidelite = 0.6                  # 1 = couleur exacte de l'image, 0 = indication exacte
+
+[polices]
+titre = "Quicksand"             # arrondie et douce
+titre_graisse = 700
+ui = "Inter"
+terminal = "Mononoki Nerd Font"
+terminal_taille = 12
+
+[barre]                         # floutée, légèrement teintée de vert
+fond = "fond"
+teinte = "accent"
+teinte_force = 0.22
+opacite = 0.45
+flou = true
+
+[bordures]                      # dégradé vert -> jaune
+couleurs = ["accent", "accent2"]
+angle = 45
+taille = 2
+
+[animations]
+style = "douce"
+
+[fond_ecran]                    # transition entre les thèmes (awww)
+transition = "fade"
+duree = 1.8
+
+[terminal]
+opacite = 0.56
+
+[horloge]                       # dans la brume en haut
+ancre = "top left"
+x = "20%"
+y = "3%"
+taille = 112
+couleur = "fond"
+date_couleur = "accent3"
+date_taille = 22
+
+[icones]                        # dans la brume, en haut à droite
+ancre = "top right"
+x = "11%"
+y = "6%"
+disposition = "ligne"
+taille = 52
+fond = "fond"
+fond_opacite = 0.45
+glyphe = "accent"
+
+[verrouillage]
+luminosite = 0.55

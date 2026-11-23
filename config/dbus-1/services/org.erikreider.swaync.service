@@ -1,0 +1,4 @@
+# Désactivé : les notifications sont gérées par mako (thèmes). Supprimer ce fichier pour revenir à swaync.
+[D-BUS Service]
+Name=org.erikreider.swaync.desactive
+Exec=/bin/false

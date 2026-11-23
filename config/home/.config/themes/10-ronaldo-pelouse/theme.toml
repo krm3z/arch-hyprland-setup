@@ -1,0 +1,69 @@
+# Thème 10 — Ronaldo pelouse : rouge, vert pelouse, blanc.
+nom = "Ronaldo pelouse"
+image = "noir-ronaldo-herbe.png"
+cadrage = [0.5, 0.5]
+phrase = "Relève-toi."
+
+[couleurs]
+mode = "sombre"
+fond = "#0e170b"
+accent = "#d42a20"              # rouge
+accent2 = "#5a8f33"             # vert pelouse
+accent3 = "#f4f4f4"             # blanc
+fidelite = 0.55
+
+[polices]
+titre = "Bebas Neue"            # épaisse, style maillot
+titre_graisse = 400
+titre_espacement = 3
+terminal = "Hack Nerd Font"
+terminal_taille = 12
+barre_horloge_taille = 16
+
+[barre]                         # semi-transparente verte
+fond = "#1f3d17"
+opacite = 0.6
+flou = true
+
+[bordures]                      # dégradé rouge -> vert
+couleurs = ["accent", "accent2"]
+angle = 45
+taille = 3
+
+[animations]
+style = "energique"
+# « Relève-toi » : les fenêtres se lèvent depuis le bas
+variante = { windowsIn = [3.5, "@ressort", "slide bottom"], workspaces = [3, "rebond", "slidevert"] }
+
+[fond_ecran]
+transition = "outer"
+position = "0.5,0.5"
+duree = 1.3
+
+[terminal]
+opacite = 0.58
+
+[horloge]                       # dans le stade flou, en haut à droite
+ancre = "top right"
+x = "4%"
+y = "3%"
+taille = 150
+couleur = "#ffffff"
+date_couleur = "#ffffff"
+date_taille = 24
+date_majuscules = true
+date_espacement = 3
+alignement = "end"
+
+[icones]                        # sur la pelouse
+ancre = "top right"
+x = "4%"
+y = "31%"
+taille = 52
+fond = "#1f3d17"
+fond_opacite = 0.7
+glyphe = "#ffffff"
+
+[verrouillage]
+luminosite = 0.55
+phrase_couleur = "accent2"

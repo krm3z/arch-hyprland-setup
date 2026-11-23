@@ -1,0 +1,67 @@
+# Thème 8 — Porsche : noir, gris anthracite, un seul accent rouge comme les feux arrière.
+nom = "Porsche"
+image = "noir-porsche.png"
+cadrage = [0.5, 0.5]
+phrase = "Moins, mais mieux."
+
+[couleurs]
+mode = "sombre"
+fond = "#0d0d0e"
+accent = "#d4202a"              # rouge des feux arrière
+accent2 = "#3b3b3e"             # gris anthracite
+accent3 = "#9a9aa0"             # gris clair
+fidelite = 0.5
+
+[polices]
+titre = "Jost"                  # élégante et fine, très espacée
+titre_graisse = 200
+titre_espacement = 14
+terminal = "MartianMono Nerd Font"
+terminal_taille = 11
+
+[barre]                         # noire mate, presque opaque
+fond = "#0a0a0b"
+opacite = 0.95
+flou = false
+
+[bordures]                      # gris fin ; rouge seulement pour la fenêtre active
+couleurs = ["accent"]
+taille = 1
+inactive = "accent3"
+inactive_opacite = 0.45
+arrondi = 10
+
+[animations]
+style = "sobre"
+
+[fond_ecran]
+transition = "fade"
+duree = 1.4
+
+[terminal]
+opacite = 0.64
+
+[horloge]                       # dans la zone grise vide, à gauche
+ancre = "top left"
+x = "5%"
+y = "10%"
+taille = 96
+couleur = "#ececee"
+date_couleur = "#c9c9cd"
+date_taille = 15
+date_majuscules = true
+date_espacement = 8
+
+[icones]
+ancre = "top left"
+x = "5%"
+y = "33%"
+taille = 50
+espacement = 12
+fond = "#0a0a0b"
+fond_opacite = 0.7
+glyphe = "#e4e4e6"
+
+[verrouillage]
+luminosite = 0.6
+phrase_couleur = "accent3"
